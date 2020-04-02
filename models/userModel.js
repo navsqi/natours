@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
@@ -13,6 +14,11 @@ const userSchema = mongoose.Schema({
     lowercase: true,
     required: [true, 'Email is required'],
     validate: [validator.isEmail, 'Please provide a valid email address']
+  },
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user'
   },
   photo: String,
   password: {
@@ -31,7 +37,9 @@ const userSchema = mongoose.Schema({
       message: 'Passwords are not match'
     }
   },
-  passwordChangedAt: Date
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date
 });
 
 userSchema.pre('save', async function(next) {
@@ -43,8 +51,35 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+userSchema.pre('save', async function(next) {
+  // check if password is not modified or new document
+  if (!this.isModified('password') || this.isNew) return next();
+
+  // set password change at - 1000 (in order to passwordChangeAt is less than token expires)
+  this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
 userSchema.methods.comparePassword = async (inputPassword, currentPassword) => {
   return await bcrypt.compare(inputPassword, currentPassword);
+};
+
+userSchema.methods.createPasswordResetToken = function() {
+  // get random string
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // get token and hash it with sha256
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  console.log(resetToken, this.passwordResetToken, this.passwordResetExpires);
+
+  return resetToken;
 };
 
 userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
@@ -55,7 +90,6 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
       10
     );
 
-    console.log(passwordChangedAt, JWTTimestamp);
     return passwordChangedAt > JWTTimestamp; // true bcs password change after token was issued
   }
 
