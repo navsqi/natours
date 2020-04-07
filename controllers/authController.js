@@ -8,7 +8,30 @@ const sendEmail = require('./../utils/email');
 
 const signToken = async id => {
   return await jwt.sign({ id: id }, process.env.JWT_SECRET, {
-    expiresIn: '' + 60000 * 60
+    expiresIn: '' + 7 * 24 * 60 * 60 * 1000
+  });
+};
+
+const createSendToken = async (user, statusCode, res) => {
+  const token = await signToken(user._id);
+
+  let cookieOptions = {
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    httpOnly: true
+  };
+
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token);
+
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user
+    }
   });
 };
 
@@ -17,15 +40,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create(req.body);
 
   // 2) sign token
-  const token = await signToken(newUser.id);
-
-  res.status(200).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser
-    }
-  });
+  createSendToken(newUser, 200, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -178,6 +193,32 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   // 3) sign token
   const token = await signToken(user._id);
+
+  res.status(200).json({
+    status: 'success',
+    token
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) Get user from collection
+  console.log(req.user);
+  const currentUser = await User.findById(req.user._id).select('+password');
+  // 2) Check if POSTed current password is correct
+  const currentPassword = req.body.currentPassword;
+
+  if (
+    !(await currentUser.comparePassword(currentPassword, currentUser.password))
+  ) {
+    return next(new AppError(`Current password is not match`, 401));
+  }
+
+  // 3) If so, update password
+  currentUser.password = req.body.newPassword;
+  currentUser.passwordConfirm = req.body.newPasswordConfirm;
+  await currentUser.save();
+  // 4) Log user in, send JWT
+  const token = await signToken(currentUser._id);
 
   res.status(200).json({
     status: 'success',

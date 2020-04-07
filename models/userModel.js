@@ -39,7 +39,35 @@ const userSchema = mongoose.Schema({
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
-  passwordResetExpires: Date
+  passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  },
+  startLocation: {
+    type: {
+      type: String,
+      default: 'Point',
+      enum: ['Point']
+    },
+    coordinates: [Number],
+    address: String,
+    description: String
+  },
+  location: [
+    {
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+      },
+      description: String,
+      address: String,
+      coordinates: [Number],
+      day: Number
+    }
+  ]
 });
 
 userSchema.pre('save', async function(next) {
@@ -58,6 +86,11 @@ userSchema.pre('save', async function(next) {
   // set password change at - 1000 (in order to passwordChangeAt is less than token expires)
   this.passwordChangedAt = Date.now() - 1000;
 
+  next();
+});
+
+userSchema.pre(/^find/, function(next) {
+  this.find({ active: { $ne: false } });
   next();
 });
 

@@ -466,14 +466,5 @@
         "day": 5
       }
     ]
-  },
-  { "id": 9, "name": "Bali", "duration": 10, "difficult": "Easy" },
-  { "id": 10, "name": "Jogja", "duration": 9, "difficult": "Easy" },
-  { "id": 11, "name": "Jakarta", "duration": 69, "difficult": "Hard" },
-  { "id": 12, "name": "Jakarta", "duration": 69, "difficult": "Hard" },
-  { "id": 13 },
-  { "id": 14, "name": "bandung", "difficult": "medium" },
-  { "id": 15, "name": "bandung", "difficult": "medium" },
-  { "id": 16, "name": "bandung", "difficult": "medium" },
-  { "id": 17, "name": "surabaya", "difficult": "medium" }
+  }
 ]
