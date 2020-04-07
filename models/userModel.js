@@ -44,30 +44,7 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
     select: false
-  },
-  startLocation: {
-    type: {
-      type: String,
-      default: 'Point',
-      enum: ['Point']
-    },
-    coordinates: [Number],
-    address: String,
-    description: String
-  },
-  location: [
-    {
-      type: {
-        type: String,
-        default: 'Point',
-        enum: ['Point']
-      },
-      description: String,
-      address: String,
-      coordinates: [Number],
-      day: Number
-    }
-  ]
+  }
 });
 
 userSchema.pre('save', async function(next) {
