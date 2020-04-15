@@ -29,6 +29,7 @@ const globalErrorHandler = require('./controllers/errorController');
 // Router
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // limiter option for rate limit
 const limiter = rateLimit({
@@ -59,6 +60,7 @@ app.use('*', (req, res, next) => {
 // Routes
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRoutes);
 
 // Handling unhandled routes
 app.all('*', (req, res, next) => {

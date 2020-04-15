@@ -2,6 +2,7 @@ const User = require('./../models/userModel');
 const APIFeatures = require('./../utils/apifeatures');
 const AppError = require('./../utils/apperror');
 const catchAsync = require('./../utils/catchasync');
+const handlerFactory = require('./handlerFactory');
 
 const filterObj = (obj, ...allowed) => {
   const newObj = {};
@@ -16,25 +17,12 @@ const filterObj = (obj, ...allowed) => {
   return newObj;
 };
 
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  // Execute Query
-  const features = new APIFeatures(User, req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
+exports.getAllUsers = handlerFactory.getAll(User);
 
-  const users = await features.query;
-
-  // Response Query
-  res.status(200).json({
-    status: 'success',
-    results: users.length,
-    data: {
-      users
-    }
-  });
-});
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) create error if POSTs password data
@@ -73,26 +61,8 @@ exports.deactivateMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = (req, res) => {
-  return res.status(200).json({
-    status: 'success'
-  });
-};
+exports.getUser = handlerFactory.getOne(User);
 
-exports.updateUser = (req, res) => {
-  return res.status(200).json({
-    status: 'success'
-  });
-};
+exports.updateUser = handlerFactory.updateOne(User);
 
-exports.deleteUser = (req, res) => {
-  return res.status(200).json({
-    status: 'success'
-  });
-};
-
-exports.insertUser = (req, res) => {
-  return res.status(200).json({
-    status: 'success'
-  });
-};
+exports.deleteUser = handlerFactory.deleteOne(User);

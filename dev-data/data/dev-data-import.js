@@ -15,12 +15,20 @@ mongoose
   });
 
 const Tour = require('./../../models/tourModel');
+const Review = require('./../../models/reviewModel');
+const User = require('./../../models/userModel');
 
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
+const reviews = JSON.parse(
+  fs.readFileSync(`${__dirname}/reviews.json`, 'utf-8')
+);
+const users = JSON.parse(fs.readFileSync(`${__dirname}/users.json`, 'utf-8'));
 
 const importData = async () => {
   try {
-    await Tour.insertMany(tours);
+    await Tour.create(tours);
+    await Review.create(reviews);
+    await User.create(users, { validateBeforeSave: false });
     console.log('Data has been imported successfully');
   } catch (err) {
     console.log(err);
@@ -32,6 +40,8 @@ const importData = async () => {
 const deleteData = async () => {
   try {
     await Tour.deleteMany();
+    await Review.deleteMany();
+    await User.deleteMany();
     console.log('Data has been deleted successfully');
   } catch (err) {
     console.log(err);

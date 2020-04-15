@@ -1,6 +1,6 @@
 const Tour = require('./../models/tourModel');
-const APIFeatures = require('./../utils/apifeatures');
 const catchAsync = require('./../utils/catchasync');
+const handlerFactory = require('./handlerFactory');
 
 exports.getTopTours = (req, res, next) => {
   req.query.limit = 5;
@@ -9,69 +9,27 @@ exports.getTopTours = (req, res, next) => {
   next();
 };
 
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // Execute Query
-  const features = new APIFeatures(Tour, req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
+exports.getAllTours = handlerFactory.getAll(Tour);
 
-  const tours = await features.query;
-
-  // Response Query
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours
-    }
-  });
+exports.getTour = handlerFactory.getOne(Tour, {
+  path: 'reviews',
+  select: 'rating review -tour'
 });
 
-exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
+exports.updateTour = handlerFactory.updateOne(Tour);
 
-  return res.status(200).json({
-    status: 'success',
-    data: {
-      tour
-    }
-  });
-});
+exports.deleteTour = handlerFactory.deleteOne(Tour);
 
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true
-  });
+// exports.deleteTour = catchAsync(async (req, res, next) => {
+//   await Tour.findByIdAndDelete(req.params.id);
 
-  return res.status(200).json({
-    status: 'success',
-    data: {
-      tour
-    }
-  });
-});
+//   return res.status(200).json({
+//     status: 'success',
+//     message: 'Data has been successfully deleted.'
+//   });
+// });
 
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  await Tour.findByIdAndDelete(req.params.id);
-  return res.status(200).json({
-    status: 'success',
-    message: 'Data has been successfully deleted.'
-  });
-});
-
-exports.insertTour = catchAsync(async (req, res, next) => {
-  const newTour = await Tour.create(req.body);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: newTour
-    }
-  });
-});
+exports.createTour = handlerFactory.createOne(Tour);
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([

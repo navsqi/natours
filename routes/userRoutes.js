@@ -2,9 +2,9 @@ const express = require('express');
 const userController = require('./../controllers/userController');
 const {
   getAllUsers,
+  getMe,
   updateMe,
   deactivateMe,
-  insertUser,
   getUser,
   deleteUser,
   updateUser
@@ -14,6 +14,7 @@ const {
   signup,
   login,
   protect,
+  restrictTo,
   forgotPassword,
   resetPassword,
   updatePassword
@@ -25,14 +26,20 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword/:token', resetPassword);
-router.patch('/updatePassword/', protect, updatePassword);
-router.patch('/updateMe/', protect, updateMe);
-router.delete('/deactivateMe/', protect, deactivateMe);
 
-router
-  .route('/')
-  .get(protect, getAllUsers)
-  .post(insertUser);
+// Middleware Protect
+router.use(protect);
+
+router.get('/me', getMe, getUser);
+
+router.patch('/updatePassword/', updatePassword);
+router.patch('/updateMe/', updateMe);
+router.delete('/deactivateMe/', deactivateMe);
+
+// Middleware admin only
+router.use(restrictTo('admin'));
+
+router.route('/').get(protect, restrictTo('admin'), getAllUsers);
 
 router
   .route('/:id')

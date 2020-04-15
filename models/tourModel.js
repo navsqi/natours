@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
-const User = require('./userModel');
+// const User = require('./userModel');
 
 const tourSchema = new mongoose.Schema(
   {
@@ -106,7 +106,12 @@ const tourSchema = new mongoose.Schema(
         day: Number
       }
     ],
-    guides: Array
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+      }
+    ]
   },
   {
     toJSON: { virtuals: true },
@@ -114,9 +119,25 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
+// indexes
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
+
 // virtual properties
 tourSchema.virtual('durationWeeks').get(function() {
-  return this.duration / 7;
+  if (this.duration) {
+    return this.duration / 7;
+  } else {
+    return (this.durationWeeks = undefined);
+  }
+});
+
+tourSchema.virtual('reviews', {
+  // reference to Review Model
+  ref: 'Review',
+  // field in reference model
+  localField: '_id', // find review where 'localField' (in Tour Model)
+  foreignField: 'tour' // is equal to 'foreignField' (in Review Model)
 });
 
 // Document Middleware: run before .save() and .create()
@@ -125,12 +146,22 @@ tourSchema.pre('save', function(next) {
   next();
 });
 
-tourSchema.pre('save', async function(next) {
-  const fetchGuides = this.guides.map(async id => await User.findById(id));
-  const guides = await Promise.all(fetchGuides);
+// Change user guide id into detail of user
+// tourSchema.pre('save', async function(next) {
+//   const fetchGuides = this.guides.map(async id => await User.findById(id));
+//   const guides = await Promise.all(fetchGuides);
 
-  this.guides = guides;
+//   this.guides = guides;
 
+//   next();
+// });
+
+// get tour guide from user id, populate is like a JOIN in SQL
+tourSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt'
+  });
   next();
 });
 

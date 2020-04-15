@@ -3,7 +3,7 @@ const tourController = require('./../controllers/tourController');
 const {
   getTopTours,
   getAllTours,
-  insertTour,
+  createTour,
   getTour,
   deleteTour,
   updateTour,
@@ -14,20 +14,28 @@ const authController = require('./../controllers/authController');
 const { protect, restrictTo } = authController;
 
 const router = express.Router();
+const reviewRoutes = require('./../routes/reviewRoutes');
+
+// Middleware review
+router.use('/:tourId/reviews', reviewRoutes);
 
 router.route('/top-tours').get(getTopTours, getAllTours);
-router.route('/stats').get(getTourStats);
-router.route('/monthly-plan/:year').get(getMonthlyPlan);
+router
+  .route('/stats')
+  .get(protect, restrictTo('admin', 'lead-guide'), getTourStats);
+router
+  .route('/monthly-plan/:year')
+  .get(protect, restrictTo('admin', 'lead-guide'), getMonthlyPlan);
 
 router
   .route('/')
   .get(getAllTours)
-  .post(insertTour);
+  .post(protect, restrictTo('admin', 'lead-guide'), createTour);
 
 router
   .route('/:id')
-  .get(getTour)
+  .get(getTour, protect)
   .delete(protect, restrictTo('admin', 'lead-guide'), deleteTour)
-  .patch(updateTour);
+  .patch(protect, restrictTo('admin', 'lead-guide'), updateTour);
 
 module.exports = router;
