@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 // const User = require('./userModel');
+const Review = require('./reviewModel');
 
 const tourSchema = new mongoose.Schema(
   {
@@ -50,7 +51,8 @@ const tourSchema = new mongoose.Schema(
       type: Number,
       default: 5,
       min: [1.0, 'A tour ratings must have more than or equals to 1 stars'],
-      max: [5.0, 'A tour ratings must have less than or equals to 5 stars']
+      max: [5.0, 'A tour ratings must have less than or equals to 5 stars'],
+      set: val => Math.round(val * 10) / 10
     },
     ratingsQuantity: {
       type: Number,
@@ -122,22 +124,32 @@ const tourSchema = new mongoose.Schema(
 // indexes
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 // virtual properties
 tourSchema.virtual('durationWeeks').get(function() {
   if (this.duration) {
     return this.duration / 7;
-  } else {
-    return (this.durationWeeks = undefined);
   }
+  // eslint-disable-next-line no-return-assign
+  return (this.durationWeeks = undefined);
 });
 
+// virtual Reviews
 tourSchema.virtual('reviews', {
   // reference to Review Model
   ref: 'Review',
   // field in reference model
   localField: '_id', // find review where 'localField' (in Tour Model)
   foreignField: 'tour' // is equal to 'foreignField' (in Review Model)
+});
+
+// Delete reviews if the tour is deleting
+tourSchema.pre('findOneAndDelete', async function(next) {
+  const tour = await this.findOne();
+
+  await Review.deleteMany({ tour: tour._id });
+  next();
 });
 
 // Document Middleware: run before .save() and .create()
@@ -170,16 +182,16 @@ tourSchema.pre(/^find/, function(next) {
   next();
 });
 
-tourSchema.pre('aggregate', function(next) {
-  // object ke array
-  this.pipeline().unshift({
-    $match: { secretTour: { $ne: true } }
-  });
-  // eslint-disable-next-line no-console
-  console.log(this.pipeline());
+// tourSchema.pre('aggregate', function(next) {
+//   // object ke array
+//   this.pipeline().unshift({
+//     $match: { secretTour: { $ne: true } }
+//   });
+//   // eslint-disable-next-line no-console
+//   console.log(this.pipeline());
 
-  next();
-});
+//   next();
+// });
 
 // tourSchema.pre(/^find/, function(next) {
 //   this.select('-name -duration');

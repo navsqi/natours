@@ -1,6 +1,7 @@
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchasync');
 const handlerFactory = require('./handlerFactory');
+const AppError = require('./../utils/apperror');
 
 exports.getTopTours = (req, res, next) => {
   req.query.limit = 5;
@@ -13,7 +14,7 @@ exports.getAllTours = handlerFactory.getAll(Tour);
 
 exports.getTour = handlerFactory.getOne(Tour, {
   path: 'reviews',
-  select: 'rating review -tour'
+  select: 'rating review -tour user'
 });
 
 exports.updateTour = handlerFactory.updateOne(Tour);
@@ -33,9 +34,6 @@ exports.createTour = handlerFactory.createOne(Tour);
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
-    {
-      $match: { ratingsAverage: { $gt: 4.5 } }
-    },
     {
       $group: {
         _id: { $toUpper: '$difficulty' },
@@ -104,5 +102,63 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
     data: {
       plan
     }
+  });
+});
+
+// route('/tours-within/:distance/center/:latlng/unit/:unit')
+// /tours-within/250/center/34.082669, -118.281201/unit/mi
+
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  if (!lat || !lng)
+    return next(new AppError(`Please provide latitude & longitude`, 400));
+
+  const tour = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: tour.length,
+    data: tour
+  });
+});
+
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.0001;
+
+  if (!lat || !lng)
+    return next(new AppError(`Please provide latitude & longitude`, 400));
+
+  const tour = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [Number(lng), Number(lat)]
+        },
+        distanceField: 'distance',
+        distanceMultiplier: multiplier
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        distance: 1
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    results: tour.length,
+    data: tour
   });
 });

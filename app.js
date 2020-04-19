@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -7,6 +8,12 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 
 const app = express();
+
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
+// serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // set security HTTP headers
 app.use(helmet());
@@ -19,9 +26,6 @@ if (process.env.NODE_ENV === 'development') {
 // body parser, reading data from body into req.body
 app.use(express.json());
 
-// serve static files
-app.use(express.static(`${__dirname}/public`));
-
 // require global error handler
 const AppError = require('./utils/apperror');
 const globalErrorHandler = require('./controllers/errorController');
@@ -30,6 +34,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const viewsRoutes = require('./routes/viewsRoutes');
 
 // limiter option for rate limit
 const limiter = rateLimit({
@@ -58,6 +63,8 @@ app.use('*', (req, res, next) => {
 });
 
 // Routes
+app.use('/', viewsRoutes);
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRoutes);

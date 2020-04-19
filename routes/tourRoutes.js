@@ -8,7 +8,9 @@ const {
   deleteTour,
   updateTour,
   getTourStats,
-  getMonthlyPlan
+  getMonthlyPlan,
+  getToursWithin,
+  getDistances
 } = tourController;
 const authController = require('./../controllers/authController');
 const { protect, restrictTo } = authController;
@@ -26,6 +28,12 @@ router
 router
   .route('/monthly-plan/:year')
   .get(protect, restrictTo('admin', 'lead-guide'), getMonthlyPlan);
+
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(getToursWithin);
+// /tours-within/250/center/34.082669, -118.281201/unit/mi
+router.route('/distances/:latlng/unit/:unit').get(getDistances);
 
 router
   .route('/')
