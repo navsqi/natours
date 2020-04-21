@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
@@ -25,6 +26,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // body parser, reading data from body into req.body
 app.use(express.json());
+// Cookie parser, reading data from cookies into req.cookies
+app.use(cookieParser());
 
 // require global error handler
 const AppError = require('./utils/apperror');
@@ -58,7 +61,7 @@ app.use('/api', limiter);
 
 // test middleware
 app.use('*', (req, res, next) => {
-  //console.log(req.headers);
+  console.log(req.cookies);
   next();
 });
 

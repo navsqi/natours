@@ -1,4 +1,4 @@
-const AppError = require('./../utils/appError');
+const AppError = require('./../utils/apperror');
 
 module.exports = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
@@ -6,11 +6,18 @@ module.exports = (err, req, res, next) => {
 
   // Handling devlopment error
   if (process.env.NODE_ENV === 'development') {
-    return res.status(err.statusCode).json({
-      status: err.status,
-      errors: err,
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(err.statusCode).json({
+        status: err.status,
+        errors: err,
+        message: err.message,
+        stack: err.stack
+      });
+    }
+
+    return res.status(err.statusCode).render('error', {
       message: err.message,
-      stack: err.stack
+      title: err.message
     });
   }
 
@@ -22,7 +29,7 @@ module.exports = (err, req, res, next) => {
   // Handling duplicate value
   if (err.code == 11000) {
     // get the message between quotes
-    let msg = err.errmsg.match(/(["'])(?:(?=(\\?))\2.)*?\1/);
+    const msg = err.errmsg.match(/(["'])(?:(?=(\\?))\2.)*?\1/);
 
     err = new AppError(
       `Duplicate field value: ${msg[0].split('"').join('')}`,
@@ -53,8 +60,15 @@ module.exports = (err, req, res, next) => {
   }
 
   // Handling production error
-  return res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message
+    });
+  }
+
+  return res.status(err.statusCode).render('error', {
+    message: err.message,
+    title: err.message
   });
 };
