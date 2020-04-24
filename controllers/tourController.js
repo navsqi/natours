@@ -1,7 +1,87 @@
+const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchasync');
 const handlerFactory = require('./handlerFactory');
 const AppError = require('./../utils/apperror');
+
+const storage = multer.memoryStorage();
+
+const fileFilter = (req, file, cb) => {
+  // File format
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new AppError('Not an image! please upload only image format', 400),
+      false
+    );
+  }
+};
+
+// Config
+const uploadConfig = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5000000
+  }
+});
+
+exports.updateImages = uploadConfig.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 8 }
+]);
+
+exports.resizeImages = (req, res, next) => {
+  if (!req.files) return next();
+
+  // 1) Image Cover
+  req.body.imageCover = `user-${req.params.id}-${Date.now()}.jpeg`;
+
+  console.log(req.files);
+
+  sharp(req.files.imageCover[0].buffer)
+    .resize(1080, 720)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/tours/${req.body.imageCover}`);
+
+  // 2) Images
+  req.body.images = [];
+  let fileNameImages = null;
+
+  for (let i = 0; i < req.files.images.length; i++) {
+    fileNameImages = `user-${req.params.id}-${Date.now() + i}.jpeg`;
+    req.body.images.push(fileNameImages);
+
+    sharp(req.files.images[i].buffer)
+      .resize(1080, 720)
+      .toFormat('jpeg')
+      .jpeg({ quality: 90 })
+      .toFile(`public/img/tours/${fileNameImages}`);
+  }
+
+  return next();
+};
+
+exports.deleteFiles = (req, res, next) => {
+  // delete old image when update the photo
+  if (req.file) {
+    fs.unlink(
+      path.join(__dirname, '..', 'public', 'img', 'users', `${req.user.photo}`),
+      err => {
+        if (err) return next(new AppError('Something went wrong', 400));
+      }
+    );
+    return next();
+  }
+
+  return next();
+};
 
 exports.getTopTours = (req, res, next) => {
   req.query.limit = 5;

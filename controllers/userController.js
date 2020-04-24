@@ -1,8 +1,105 @@
+const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+
 const User = require('./../models/userModel');
-const APIFeatures = require('./../utils/apifeatures');
+
 const AppError = require('./../utils/apperror');
 const catchAsync = require('./../utils/catchasync');
 const handlerFactory = require('./handlerFactory');
+
+// const storage = multer.diskStorage({
+//   destination: function(req, file, cb) {
+//     cb(null, './public/img/users/');
+//   },
+//   filename: function(req, file, cb) {
+//     const imageFormat = file.mimetype.split('/')[1];
+//     const fileName = `user-${req.user.id}-${Date.now()}.${imageFormat}`;
+//     cb(null, fileName);
+//   }
+// });
+
+const storage = multer.memoryStorage();
+
+const fileFilter = (req, file, cb) => {
+  // File format
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new AppError('Not an image! please upload only image format', 400),
+      false
+    );
+  }
+};
+
+// File size
+const uploadConfig = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 1000000
+  }
+});
+
+exports.updatePhoto = (req, res, next) => {
+  const upload = uploadConfig.single('photo');
+
+  // console.log(req.file);
+
+  upload(req, res, function(err) {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      if (err.code === 'LIMIT_FILE_SIZE')
+        return next(
+          new AppError('File too large, size should be less than 1 Mb', 400)
+        );
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      return res.send(err);
+    }
+    // Everything went fine.
+    return next();
+  });
+};
+
+exports.resizePhoto = (req, res, next) => {
+  if (!req.file) return next();
+
+  req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+  sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/users/${req.file.filename}`);
+
+  return next();
+};
+
+exports.deleteFile = (req, res, next) => {
+  // delete old image when update the photo
+  if (req.file) {
+    const filePath = path.join(
+      __dirname,
+      '..',
+      'public',
+      'img',
+      'users',
+      `${req.user.photo}`
+    );
+    // check if file exists
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, err => {
+        if (err) return next(new AppError('Something went wrong', 400));
+      });
+      return next();
+    }
+  }
+
+  return next();
+};
 
 const filterObj = (obj, ...allowed) => {
   const newObj = {};
@@ -25,6 +122,8 @@ exports.getMe = (req, res, next) => {
 };
 
 exports.updateMe = catchAsync(async (req, res, next) => {
+  // console.log(req.file, req.body);
+
   // 1) create error if POSTs password data
   if (req.body.password || req.body.passwordConfirm) {
     return next(
@@ -34,6 +133,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 
   // 2) update user document
   const updateObject = filterObj(req.body, 'name', 'email');
+  if (req.file) updateObject.photo = req.file.filename;
 
   const updateCurrentUser = await User.findByIdAndUpdate(
     req.user.id,
@@ -51,7 +151,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 });
 
 exports.deactivateMe = catchAsync(async (req, res, next) => {
-  const currentUser = await User.findByIdAndUpdate(req.user._id, {
+  await User.findByIdAndUpdate(req.user._id, {
     active: false
   });
 

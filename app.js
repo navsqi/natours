@@ -26,6 +26,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // body parser, reading data from body into req.body
 app.use(express.json());
+// body parser, reading data from form into req.body
+app.use(express.urlencoded({ extended: true }));
 // Cookie parser, reading data from cookies into req.cookies
 app.use(cookieParser());
 
@@ -61,7 +63,8 @@ app.use('/api', limiter);
 
 // test middleware
 app.use('*', (req, res, next) => {
-  console.log(req.cookies);
+  // console.log(req.body);
+  // console.log(req.cookies);
   next();
 });
 

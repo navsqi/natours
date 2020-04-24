@@ -20,7 +20,10 @@ const userSchema = mongoose.Schema({
     enum: ['user', 'guide', 'lead-guide', 'admin'],
     default: 'user'
   },
-  photo: String,
+  photo: {
+    type: String,
+    default: 'default.jpg'
+  },
   password: {
     type: String,
     required: [true, 'Password is required'],
@@ -47,24 +50,24 @@ const userSchema = mongoose.Schema({
   }
 });
 
-// userSchema.pre('save', async function(next) {
-//   if (!this.isModified('password')) return next();
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
 
-//   this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
 
-//   this.passwordConfirm = undefined;
-//   next();
-// });
+  this.passwordConfirm = undefined;
+  next();
+});
 
-// userSchema.pre('save', async function(next) {
-//   // check if password is not modified or new document
-//   if (!this.isModified('password') || this.isNew) return next();
+userSchema.pre('save', async function(next) {
+  // check if password is not modified or new document
+  if (!this.isModified('password') || this.isNew) return next();
 
-//   // set password change at - 1000 (in order to passwordChangeAt is less than token expires)
-//   this.passwordChangedAt = Date.now() - 1000;
+  // set password change at - 1000 (in order to passwordChangeAt is less than token expires)
+  this.passwordChangedAt = Date.now() - 1000;
 
-//   next();
-// });
+  next();
+});
 
 userSchema.pre(/^find/, function(next) {
   this.find({ active: { $ne: false } });
@@ -87,7 +90,7 @@ userSchema.methods.createPasswordResetToken = function() {
 
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
-  console.log(resetToken, this.passwordResetToken, this.passwordResetExpires);
+  // console.log(resetToken, this.passwordResetToken, this.passwordResetExpires);
 
   return resetToken;
 };

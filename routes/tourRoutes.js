@@ -1,6 +1,8 @@
 const express = require('express');
 const tourController = require('./../controllers/tourController');
 const {
+  updateImages,
+  resizeImages,
   getTopTours,
   getAllTours,
   createTour,
@@ -44,6 +46,12 @@ router
   .route('/:id')
   .get(getTour, protect)
   .delete(protect, restrictTo('admin', 'lead-guide'), deleteTour)
-  .patch(protect, restrictTo('admin', 'lead-guide'), updateTour);
+  .patch(
+    protect,
+    restrictTo('admin', 'lead-guide'),
+    updateImages,
+    resizeImages,
+    updateTour
+  );
 
 module.exports = router;

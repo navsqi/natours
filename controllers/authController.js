@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchasync');
 const AppError = require('./../utils/apperror');
-const sendEmail = require('./../utils/email');
+const Email = require('./../utils/email');
 
 const signToken = async id => {
   return await jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -39,6 +39,13 @@ const createSendToken = async (user, statusCode, res) => {
 exports.signup = catchAsync(async (req, res, next) => {
   // 1) create new user
   const newUser = await User.create(req.body);
+  const url = `${req.protocol}://${req.get('host')}/me`;
+  console.log(url);
+  try {
+    await new Email(newUser, url).sendWelcome();
+  } catch (err) {
+    return res.send(err);
+  }
 
   // 2) sign token
   createSendToken(newUser, 200, res);
@@ -87,9 +94,13 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
-    return next(
-      new AppError('You are not logged in! Please log in to get access', 401)
-    );
+    if (req.originalUrl.startsWith('/api')) {
+      return next(
+        new AppError('You are not logged in! Please log in to get access', 401)
+      );
+    }
+
+    return res.redirect('/login');
   }
 
   // 2) verification token
@@ -106,12 +117,17 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // 4) check if password not changed after the token was issued
   if (currentUser.changedPasswordAfter(verify.iat)) {
-    return next(
-      new AppError(`User recently changed password, please log in again`, 401)
-    );
+    if (req.originalUrl.startsWith('/api')) {
+      return next(
+        new AppError(`User recently changed password, please log in again`, 401)
+      );
+    }
+
+    return res.redirect('/login');
   }
 
   req.user = currentUser;
+  res.locals.user = currentUser;
   next();
 });
 
@@ -177,11 +193,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const subject = `Reset password token (valid for 10 min)`;
 
   try {
-    await sendEmail({
-      email: user.email,
-      subject,
-      message
-    });
+    await new Email(user, resetURL).sendResetToken();
 
     res.status(200).json({
       status: 'success',

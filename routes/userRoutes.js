@@ -7,7 +7,10 @@ const {
   deactivateMe,
   getUser,
   deleteUser,
-  updateUser
+  updateUser,
+  updatePhoto,
+  resizePhoto,
+  deleteFile
 } = userController;
 const authController = require('./../controllers/authController');
 const {
@@ -35,7 +38,7 @@ router.use(protect);
 router.get('/me', getMe, getUser);
 
 router.patch('/updatePassword/', updatePassword);
-router.patch('/updateMe/', updateMe);
+router.patch('/updateMe/', updatePhoto, resizePhoto, deleteFile, updateMe);
 router.delete('/deactivateMe/', deactivateMe);
 
 // Middleware admin only

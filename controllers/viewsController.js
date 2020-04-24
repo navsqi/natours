@@ -1,4 +1,5 @@
 const Tour = require('./../models/tourModel');
+const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchasync');
 const AppError = require('./../utils/apperror');
 
@@ -29,4 +30,26 @@ exports.getLoginForm = catchAsync(async (req, res) => {
   res.render('login', {
     title: 'Login'
   });
+});
+
+exports.getAccount = (req, res) => {
+  res.render('account', {
+    title: 'Account Settings'
+  });
+};
+
+exports.updateUserData = catchAsync(async (req, res) => {
+  const newUserData = await User.findByIdAndUpdate(
+    req.user.id,
+    {
+      name: req.body.name,
+      email: req.body.email
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  return res.redirect('/me');
 });
