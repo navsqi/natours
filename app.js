@@ -38,8 +38,9 @@ const globalErrorHandler = require('./controllers/errorController');
 // Router
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
-const reviewRoutes = require('./routes/reviewRoutes');
-const viewsRoutes = require('./routes/viewsRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
+const viewsRouter = require('./routes/viewsRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 
 // limiter option for rate limit
 const limiter = rateLimit({
@@ -69,11 +70,12 @@ app.use('*', (req, res, next) => {
 });
 
 // Routes
-app.use('/', viewsRoutes);
+app.use('/', viewsRouter);
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
-app.use('/api/v1/reviews', reviewRoutes);
+app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 // Handling unhandled routes
 app.all('*', (req, res, next) => {
