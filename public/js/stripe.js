@@ -7,10 +7,8 @@ export async function bookTour(tourId) {
   try {
     const response = await axios({
       method: 'GET',
-      url: `http://localhost:3000/api/v1/bookings/checkout-session/${tourId}`
+      url: `/api/v1/bookings/checkout-session/${tourId}`
     });
-
-    console.log(response);
 
     stripe
       .redirectToCheckout({
@@ -23,10 +21,8 @@ export async function bookTour(tourId) {
         // If `redirectToCheckout` fails due to a browser or network
         // error, display the localized error message to your customer
         // using `result.error.message`.
-        console.log(result.error.message);
       });
   } catch (err) {
-    console.log(err.response);
     showAlert('error', err);
   }
 }

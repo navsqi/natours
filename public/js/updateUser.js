@@ -4,8 +4,8 @@ import { showAlert } from './alert';
 export async function updateUser(data, type) {
   const url =
     type == 'password'
-      ? 'http://localhost:3000/api/v1/users/updatePassword'
-      : 'http://localhost:3000/api/v1/users/updateMe';
+      ? '/api/v1/users/updatePassword'
+      : '/api/v1/users/updateMe';
 
   try {
     const response = await axios({

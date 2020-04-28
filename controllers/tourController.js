@@ -42,8 +42,6 @@ exports.resizeImages = (req, res, next) => {
   // 1) Image Cover
   req.body.imageCover = `user-${req.params.id}-${Date.now()}.jpeg`;
 
-  console.log(req.files);
-
   sharp(req.files.imageCover[0].buffer)
     .resize(1080, 720)
     .toFormat('jpeg')

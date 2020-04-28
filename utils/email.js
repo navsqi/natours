@@ -13,10 +13,10 @@ module.exports = class Email {
   newTransport() {
     if (process.env.NODE_ENV != 'development') {
       return nodemailer.createTransport({
-        service: 'Mailgun',
+        service: 'SendGrid',
         auth: {
-          user: process.env.MAILGUN_USERNAME,
-          pass: process.env.MAILGUN_PASSWORD
+          user: process.env.SENDGRID_USERNAME,
+          pass: process.env.SENDGRID_PASSWORD
         }
       });
     }
@@ -51,8 +51,6 @@ module.exports = class Email {
       html
     };
     // 3) Create transport and send email
-
-    console.log(this.newTransport());
 
     await this.newTransport().sendMail(mailOptions);
   }

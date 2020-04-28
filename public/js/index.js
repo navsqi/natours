@@ -43,8 +43,6 @@ if (formUserData) {
     const name = document.querySelector('#name').value;
     const email = document.querySelector('#email').value;
 
-    console.log(name, email);
-
     updateUser(new FormData(formUserData), 'data');
   });
 }

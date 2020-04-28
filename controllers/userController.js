@@ -46,8 +46,6 @@ const uploadConfig = multer({
 exports.updatePhoto = (req, res, next) => {
   const upload = uploadConfig.single('photo');
 
-  // console.log(req.file);
-
   upload(req, res, function(err) {
     if (err instanceof multer.MulterError) {
       // A Multer error occurred when uploading.
@@ -122,8 +120,6 @@ exports.getMe = (req, res, next) => {
 };
 
 exports.updateMe = catchAsync(async (req, res, next) => {
-  // console.log(req.file, req.body);
-
   // 1) create error if POSTs password data
   if (req.body.password || req.body.passwordConfirm) {
     return next(

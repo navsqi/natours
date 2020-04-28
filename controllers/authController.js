@@ -40,7 +40,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   // 1) create new user
   const newUser = await User.create(req.body);
   const url = `${req.protocol}://${req.get('host')}/me`;
-  console.log(url);
+
   try {
     await new Email(newUser, url).sendWelcome();
   } catch (err) {
